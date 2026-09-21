@@ -46,7 +46,7 @@ Built and demoed entirely in **Google Colab**, with a public **Streamlit** UI se
 
 ## 🧠 System Architecture
 
-\`\`\`mermaid
+```mermaid
 flowchart TD
     A[📄 CSV Dataset] --> R[🔎 Retrieval Agent]
     W[🌐 Wikipedia API] --> R
@@ -70,7 +70,7 @@ flowchart TD
     style Orchestrator fill:#1a1d24,stroke:#3E7CB1,color:#fff
     style LLM fill:#4a2b5c,stroke:#8E44AD,color:#fff
     style CACHE fill:#2b3a1a,stroke:#5c8e44,color:#fff
-\`\`\`
+```
 
 **Design principles behind the pipeline:**
 - **Sequential where order matters, parallel where it doesn't** — report generation and
@@ -88,7 +88,7 @@ flowchart TD
 
 ## 🤖 The Agents
 
-\`\`\`mermaid
+```mermaid
 classDiagram
     class Orchestrator {
         +run(csv_path, report_type, send_email)
@@ -127,21 +127,21 @@ classDiagram
     RetrievalAgent --> SchemaAgent
     SchemaAgent --> LocalLLM
     AnalysisAgent --> LocalLLM
-\`\`\`
+```
 
 | Agent | Responsibility | Key techniques |
 |---|---|---|
-| **Retrieval Agent** | Loads the CSV, fetches live USD→EGP FX rate, pulls Wikipedia background context | \`requests\`, live public APIs |
-| **Schema Agent** | Figures out which column is \`country\`, \`platform\`, \`sales\`, \`players\`, \`date\` | Local LLM asked **twice** with independently-worded few-shot prompts; disagreements resolved by keyword heuristic; unresolved columns flagged \`needs_review\` instead of guessed |
-| **Analysis Agent** | Computes stats, detects anomalies, writes the report content | pandas z-score anomaly detection; **deterministic bilingual (EN/AR) templates** for every number (numbers are never machine-translated); optional qualitative AI commentary from \`flan-t5-base\` |
-| **Action Agent** | Turns analysis into real outputs | \`fpdf2\` (bilingual PDF with embedded charts), \`matplotlib\`, SMTP email delivery, live dashboard JSON |
+| **Retrieval Agent** | Loads the CSV, fetches live USD→EGP FX rate, pulls Wikipedia background context | `requests`, live public APIs |
+| **Schema Agent** | Figures out which column is `country`, `platform`, `sales`, `players`, `date` | Local LLM asked **twice** with independently-worded few-shot prompts; disagreements resolved by keyword heuristic; unresolved columns flagged `needs_review` instead of guessed |
+| **Analysis Agent** | Computes stats, detects anomalies, writes the report content | pandas z-score anomaly detection; **deterministic bilingual (EN/AR) templates** for every number (numbers are never machine-translated); optional qualitative AI commentary from `flan-t5-base` |
+| **Action Agent** | Turns analysis into real outputs | `fpdf2` (bilingual PDF with embedded charts), `matplotlib`, SMTP email delivery, live dashboard JSON |
 | **Orchestrator** | Coordinates all of the above | Retry-with-backoff, parallel thread execution, structured run logs |
 
 ---
 
 ## 🔁 Pipeline Run Sequence
 
-\`\`\`mermaid
+```mermaid
 sequenceDiagram
     participant U as User (Streamlit UI)
     participant O as Orchestrator
@@ -173,17 +173,17 @@ sequenceDiagram
     E-->>AC: delivered
     AC-->>O: email_sent = true
     O-->>U: run log (stats, charts, PDF, dashboard, email status)
-\`\`\`
+```
 
 ---
 
 ## 🩺 Schema Agent — Column Classification Logic
 
 Real-world datasets don't ship with predictable column names. Instead of hardcoding
-\`df["Country"]\`, the Schema Agent classifies every column through a dual-verification process
+`df["Country"]`, the Schema Agent classifies every column through a dual-verification process
 designed specifically to catch hallucination from a small local model:
 
-\`\`\`mermaid
+```mermaid
 flowchart TD
     START([Column: name + sample values + dtype]) --> P1[Prompt A<br/>few-shot style 1]
     START --> P2[Prompt B<br/>few-shot style 2]
@@ -206,7 +206,7 @@ flowchart TD
     style FLAG fill:#5c2b2b,stroke:#c0392b,color:#fff
     style ASSIGN fill:#2b5c2b,stroke:#27ae60,color:#fff
     style CACHE fill:#2b3a1a,stroke:#5c8e44,color:#fff
-\`\`\`
+```
 
 This is the project's actual "learning" loop: not model retraining, but a persistent,
 user-correctable memory of what each column means — a wrong guess can never silently ship into
@@ -217,7 +217,7 @@ before a role is assigned.
 
 ## ♻️ Reliability Model — Retry & Parallel Execution
 
-\`\`\`mermaid
+```mermaid
 stateDiagram-v2
     [*] --> Retrieval
     Retrieval --> RetrievalRetry: fails
@@ -247,9 +247,9 @@ stateDiagram-v2
     Success --> [*]
     PartialSuccess --> [*]
     Failed --> [*]
-\`\`\`
+```
 
-Every stage uses exponential backoff (\`RETRY_BACKOFF_SECONDS * attempt\`) between attempts, and
+Every stage uses exponential backoff (`RETRY_BACKOFF_SECONDS * attempt`) between attempts, and
 report generation + dashboard update run as **parallel threads** since neither depends on the
 other's output.
 
@@ -257,7 +257,7 @@ other's output.
 
 ## 📊 Report Types & Content Structure
 
-\`\`\`mermaid
+```mermaid
 flowchart LR
     SELECT[User selects report type] --> OVERALL[Overall Performance]
     SELECT --> REGIONAL[Regional Deep-Dive]
@@ -276,11 +276,11 @@ flowchart LR
     CONTENT3 --> OUTPUT
     CONTENT4 --> OUTPUT
     CONTENT5 --> OUTPUT
-\`\`\`
+```
 
 Every report — regardless of type — is addressed to the **Marketing Team Lead** and contains:
 
-\`\`\`mermaid
+```mermaid
 flowchart TD
     PDF[📑 PDF Report] --> T[Title + Prepared For + Timestamp]
     PDF --> SUM[Bilingual Summary — EN/AR]
@@ -290,7 +290,7 @@ flowchart TD
     PDF --> CHARTS[Charts — bar/histogram, type-dependent]
     PDF --> CTX[Background Context — Overall report only]
     PDF --> RAW[Raw stats JSON — appendix]
-\`\`\`
+```
 
 Reports are generated as a detailed PDF (summary, recommendations, anomalies where relevant,
 charts, background context, Arabic translation), and **emailed automatically** on every run —
@@ -300,7 +300,7 @@ no manual send step.
 
 ## 🖥️ The UI
 
-\`\`\`mermaid
+```mermaid
 flowchart TD
     APP[Streamlit App] --> SIDEBAR[Sidebar: Pipeline Controls]
     SIDEBAR --> SEL[Report type selector]
@@ -314,7 +314,7 @@ flowchart TD
     TABS --> T2[🧠 AI Insights<br/>bilingual summary + anomalies + recs]
     TABS --> T3[⚙️ Automated Actions<br/>status + PDF download + dashboard JSON]
     TABS --> T4[✅ Evaluation<br/>success rate + latency metrics]
-\`\`\`
+```
 
 <!-- 📸 Add your own screenshots here once you have them, e.g.: -->
 <!-- ![UI Overview](screenshots/overview.png) -->
@@ -326,11 +326,11 @@ flowchart TD
 ## 🔎 Sample Output
 
 **Terminal-style run log:**
-\`\`\`
+```
 🔎 Retrieval Agent: loaded 14,780 rows from CSV; FX rate USD→EGP fetched; Wikipedia context fetched.
 🧠 Analysis Agent: computed stats; found 2 anomaly(ies); generated bilingual EN/AR summary + AI commentary.
 ⚙️ Action Agent: PDF report generated, dashboard updated, email sent to worofyousef@gmail.com.
-\`\`\`
+```
 
 **Example anomaly output:**
 
@@ -340,19 +340,19 @@ flowchart TD
 
 **Example recommendations output (Overall report):**
 
-\`\`\`mermaid
+```mermaid
 graph LR
     A[Top country: Colombia] --> R1[Increase marketing<br/>investment in Colombia]
     B[Top platform: PC] --> R2[Prioritize PC-specific<br/>content & optimization]
     C[Anomaly: Argentina<br/>z-score 2.72] --> R3[Investigate Argentina's<br/>unusual sales pattern]
     D[Avg players: 31,627] --> R4[Monitor engagement<br/>trend closely]
-\`\`\`
+```
 
 ---
 
 ## ✅ Reliability & Testing
 
-\`evaluate.py\` runs the full pipeline multiple times back-to-back (no email sent during testing)
+`evaluate.py` runs the full pipeline multiple times back-to-back (no email sent during testing)
 and reports:
 
 - **Success rate** across runs
@@ -361,13 +361,13 @@ and reports:
 Every stage is wrapped in retry-with-backoff, and thread-level exceptions in report generation
 or dashboard updates are now captured into the run log instead of silently passing.
 
-\`\`\`python
+```python
 {
   'runs': 3,
   'success_rate': '3/3',
   'avg_seconds_per_step': {'retrieval': 0.4, 'analysis': 9.8, 'actions': 1.2}
 }
-\`\`\`
+```
 
 ---
 
@@ -375,40 +375,40 @@ or dashboard updates are now captured into the run log instead of silently passi
 
 | Layer | Tools |
 |---|---|
-| Data | \`pandas\`, \`requests\` |
-| Local LLM | \`transformers\` (\`google/flan-t5-base\`) — no paid API |
-| Visualization | \`matplotlib\`, \`plotly\` |
-| PDF generation | \`fpdf2\`, \`arabic-reshaper\`, \`python-bidi\` |
-| UI | \`streamlit\` |
-| Public demo hosting | \`pyngrok\` |
-| Automation | \`smtplib\` (Gmail SMTP, App Password auth) |
+| Data | `pandas`, `requests` |
+| Local LLM | `transformers` (`google/flan-t5-base`) — no paid API |
+| Visualization | `matplotlib`, `plotly` |
+| PDF generation | `fpdf2`, `arabic-reshaper`, `python-bidi` |
+| UI | `streamlit` |
+| Public demo hosting | `pyngrok` |
+| Automation | `smtplib` (Gmail SMTP, App Password auth) |
 
 ---
 
 ## 🚀 Running It
 
 Built and run entirely in **Google Colab** — see
-[\`notebook/Final_Project_Worof_Ahmed.ipynb\`](notebook/Final_Project_Worof_Ahmed.ipynb) for the
+[`notebook/Final_Project_Worof_Ahmed.ipynb`](notebook/Final_Project_Worof_Ahmed.ipynb) for the
 full cell-by-cell setup.
 
 1. Open the notebook in Colab.
 2. Run the install cell.
 3. Enter your Gmail App Password and ngrok auth token when prompted (never hardcode these).
-4. Upload the dataset once to \`/content/\`.
-5. Run the agent-file cells (\`%%writefile\` cells build \`agents/\`, \`orchestrator.py\`, \`app.py\`).
+4. Upload the dataset once to `/content/`.
+5. Run the agent-file cells (`%%writefile` cells build `agents/`, `orchestrator.py`, `app.py`).
 6. The final cell launches Streamlit + ngrok and prints a public URL.
 
 ### Running locally instead
-\`\`\`bash
+```bash
 git clone https://github.com/Worof/gta-v-multi-agent-analytics.git
 cd gta-v-multi-agent-analytics
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app.py
-\`\`\`
-You'll still need a Gmail App Password (\`EMAIL_APP_PASSWORD\` env var) for the email step, and
-the dataset placed at the path set in \`config.py\`.
+```
+You'll still need a Gmail App Password (`EMAIL_APP_PASSWORD` env var) for the email step, and
+the dataset placed at the path set in `config.py`.
 
 ---
 
@@ -421,7 +421,7 @@ the dataset placed at the path set in \`config.py\`.
 
 ## 🔮 Possible Extensions
 
-- Swap \`flan-t5-base\` for a larger local model on a GPU runtime for richer AI commentary
+- Swap `flan-t5-base` for a larger local model on a GPU runtime for richer AI commentary
 - Add a second file-based retrieval source (PDF ingestion) alongside the CSV + APIs
 - Persist historical dashboard snapshots to chart trend-over-time, not just latest run
 - Add a lightweight embeddings-based Q&A agent over the dataset rows
