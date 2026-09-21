@@ -1,0 +1,11 @@
+pandas
+streamlit
+plotly
+requests
+matplotlib
+fpdf2
+transformers
+sentencepiece
+arabic-reshaper
+python-bidi
+pyngrok
